@@ -485,15 +485,17 @@ abstract contract LSSVMPair is
         // Revert if input is more than expected
         require(inputAmount <= maxExpectedTokenInput, "In too many tokens");
 
-        // Update spot price if it has been updated
-        if (currentSpotPrice != newSpotPrice) {
+        // Consolidate writes to save gas
+        if (currentSpotPrice != newSpotPrice || currentDelta != newDelta) {
             spotPrice = newSpotPrice;
+            delta = newDelta;
+        }
+        // Emit spot price update if it has been updated
+        if (currentSpotPrice != newSpotPrice) {
             emit SpotPriceUpdate(newSpotPrice);
         }
-
-        // Update delta if it has been updated
+        // Emit delta update if it has been updated
         if (currentDelta != newDelta) {
-            delta = newDelta;
             emit DeltaUpdate(newDelta);
         }
     }
@@ -544,15 +546,17 @@ abstract contract LSSVMPair is
             "Out too little tokens"
         );
 
-        // Update spot price if it has been updated
-        if (currentSpotPrice != newSpotPrice) {
+        // Consolidate writes to save gas
+        if (currentSpotPrice != newSpotPrice || currentDelta != newDelta) {
             spotPrice = newSpotPrice;
+            delta = newDelta;
+        }
+        // Emit spot price update if it has been updated
+        if (currentSpotPrice != newSpotPrice) {
             emit SpotPriceUpdate(newSpotPrice);
         }
-
-        // Update delta if it has been updated
+        // Emit delta update if it has been updated
         if (currentDelta != newDelta) {
-            delta = newDelta;
             emit DeltaUpdate(newDelta);
         }
     }

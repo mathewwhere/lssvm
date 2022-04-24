@@ -8,3 +8,6 @@ out/
 
 # Forge
 cache/
+
+# truffle
+build/
