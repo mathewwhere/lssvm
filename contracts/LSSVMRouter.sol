@@ -1120,4 +1120,23 @@ contract LSSVMRouter {
         // Aggregate slippage check
         require(outputAmount >= minOutput, "outputAmount too low");
     }
+
+    /** 
+      @dev Used to deposit NFTs into a pair after creation and emit an event for indexing (if recipient is indeed a pair)
+    */
+    function depositNFTs(
+        IERC721 _nft,
+        uint256[] calldata ids,
+        address recipient
+    ) external {
+        // transfer NFTs from caller to recipient
+        uint256 numNFTs = ids.length;
+        for (uint256 i; i < numNFTs; ) {
+            _nft.safeTransferFrom(msg.sender, recipient, ids[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
 }

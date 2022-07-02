@@ -8,20 +8,20 @@ const LSSVMPairFactoryArtifact = artifacts.require('./LSSVMPairFactory.sol');
 const LSSVMRouterArtifact = artifacts.require('./LSSVMRouter.sol');
 
 module.exports = async(deployer) => {
-  await deployer.deploy(ExponentialCurveArtifact);
-  await deployer.deploy(LinearCurveArtifact);
-  await deployer.deploy(LSSVMPairEnumerableERC20Artifact);
-  await deployer.deploy(LSSVMPairEnumerableETHArtifact);
-  await deployer.deploy(LSSVMPairMissingEnumerableERC20Artifact);
-  await deployer.deploy(LSSVMPairMissingEnumerableETHArtifact);
-  await deployer.deploy(
-    LSSVMPairFactoryArtifact,
-    LSSVMPairEnumerableETHArtifact.address,
-    LSSVMPairMissingEnumerableETHArtifact.address,
-    LSSVMPairEnumerableERC20Artifact.address,
-    LSSVMPairMissingEnumerableERC20Artifact.address,
-    "0x75d4bdBf6593ed463e9625694272a0FF9a6D346F",
-    web3.utils.toWei('0.01', 'ether')
-  );
-  await deployer.deploy(LSSVMRouterArtifact, "0xcB1514FE29db064fa595628E0BFFD10cdf998F33");
+  // await deployer.deploy(ExponentialCurveArtifact);
+  // await deployer.deploy(LinearCurveArtifact);
+  // await deployer.deploy(LSSVMPairEnumerableERC20Artifact);
+  // await deployer.deploy(LSSVMPairEnumerableETHArtifact);
+  // await deployer.deploy(LSSVMPairMissingEnumerableERC20Artifact);
+  // await deployer.deploy(LSSVMPairMissingEnumerableETHArtifact);
+  // await deployer.deploy(
+  //   LSSVMPairFactoryArtifact,
+  //   LSSVMPairEnumerableETHArtifact.address,
+  //   LSSVMPairMissingEnumerableETHArtifact.address,
+  //   LSSVMPairEnumerableERC20Artifact.address,
+  //   LSSVMPairMissingEnumerableERC20Artifact.address,
+  //   "0x75d4bdBf6593ed463e9625694272a0FF9a6D346F",
+  //   web3.utils.toWei('0.01', 'ether')
+  // );
+  await deployer.deploy(LSSVMRouterArtifact, "0xb16c1342E617A5B6E4b631EB114483FDB289c0A4");
 }
