@@ -36,5 +36,5 @@ module.exports = {
       }
     },
   },
-  plugins: ["solidity-coverage"]
+  plugins: ['truffle-plugin-stdjsonin']
 };

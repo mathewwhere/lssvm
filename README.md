@@ -77,6 +77,8 @@ We use Alchemy as a remote node provider for the Mainnet & Rinkeby network deplo
 You must have set your API key as the `ALCHEMY_API_KEY` enviroment variable in order to
 deploy to these networks
 
+You can use the solt binary to create input JSONs for verification.
+
 ### Mainnet
 
 ```
