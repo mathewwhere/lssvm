@@ -61,9 +61,9 @@ abstract contract LSSVMPairERC1155SingleId is
     /**
      *  Events
      */
-    event SwapNFTInPair();
     event NFTWithdrawal();
-    event SwapNFTOutPair();
+    event SwapNFTInPair(uint256 amount);
+    event SwapNFTOutPair(uint256 amount);
     event FeeUpdate(uint96 newFee);
     event TokenDeposit(uint256 amount);
     event DeltaUpdate(uint128 newDelta);
@@ -187,7 +187,7 @@ abstract contract LSSVMPairERC1155SingleId is
 
         _refundTokenToSender(inputAmount);
 
-        emit SwapNFTOutPair();
+        emit SwapNFTOutPair(inputAmount);
     }
 
     /**
@@ -204,7 +204,7 @@ abstract contract LSSVMPairERC1155SingleId is
         @return outputAmount The amount of token received
      */
     function swapNFTsForToken(
-        uint256 numNFTs,
+        uint256[] calldata numNFTs, // @dev this is a bit hacky, to allow for better interop w/ other pair interfaces
         uint256 minExpectedTokenOutput,
         address payable tokenRecipient,
         bool isRouter,
@@ -221,13 +221,13 @@ abstract contract LSSVMPairERC1155SingleId is
                 _poolType == PoolType.TOKEN || _poolType == PoolType.TRADE,
                 "Wrong Pool type"
             );
-            require(numNFTs != 0, "Must swap > 0 NFTs");
+            require(numNFTs.length == 1 && numNFTs[0] > 0, "Must swap > 0 NFTs");
         }
 
         // Call bonding curve for pricing information
         uint256 protocolFee;
         (protocolFee, outputAmount) = _calculateSellInfoAndUpdatePoolParams(
-            numNFTs,
+            numNFTs[0],
             minExpectedTokenOutput,
             _bondingCurve,
             _factory
@@ -237,9 +237,9 @@ abstract contract LSSVMPairERC1155SingleId is
 
         _payProtocolFeeFromPair(_factory, protocolFee);
 
-        _takeNFTsFromSender(nft(), numNFTs, isRouter, routerCaller);
+        _takeNFTsFromSender(nft(), numNFTs[0], isRouter, routerCaller);
 
-        emit SwapNFTInPair();
+        emit SwapNFTInPair(outputAmount);
     }
 
     /**

@@ -62,9 +62,9 @@ abstract contract LSSVMPairERC1155ManyId is
     /**
      *  Events
      */
-    event SwapNFTInPair();
     event NFTWithdrawal();
-    event SwapNFTOutPair();
+    event SwapNFTInPair(uint256 amount);
+    event SwapNFTOutPair(uint256 amount);
     event FeeUpdate(uint96 newFee);
     event TokenDeposit(uint256 amount);
     event DeltaUpdate(uint128 newDelta);
@@ -184,7 +184,7 @@ abstract contract LSSVMPairERC1155ManyId is
 
         _refundTokenToSender(inputAmount);
 
-        emit SwapNFTOutPair();
+        emit SwapNFTOutPair(inputAmount);
     }
 
     /**
@@ -236,7 +236,7 @@ abstract contract LSSVMPairERC1155ManyId is
 
         _takeNFTsFromSender(nft(), nftIds, isRouter, routerCaller);
 
-        emit SwapNFTInPair();
+        emit SwapNFTInPair(outputAmount);
     }
 
     /**
@@ -590,7 +590,7 @@ abstract contract LSSVMPairERC1155ManyId is
 
     /**
         @notice Takes NFTs from the caller and sends them into the pair's asset recipient
-        @dev This is used by the LSSVMPair's swapNFTForToken function. 
+        @dev This is used by the LSSVMPair's swapNFTsForToken function. 
         @param _nft The NFT collection to take from
         @param nftIds The specific NFT IDs to take
      */

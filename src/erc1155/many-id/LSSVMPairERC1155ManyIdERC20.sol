@@ -149,16 +149,7 @@ contract LSSVMPairERC1155ManyIdERC20 is LSSVMPairERC1155ManyId {
     ) internal override {
         // Take protocol fee (if it exists)
         if (protocolFee > 0) {
-            ERC20 _token = token();
-
-            // Round down to the actual token balance if there are numerical stability issues with the bonding curve calculations
-            uint256 pairTokenBalance = _token.balanceOf(address(this));
-            if (protocolFee > pairTokenBalance) {
-                protocolFee = pairTokenBalance;
-            }
-            if (protocolFee > 0) {
-                _token.safeTransfer(address(_factory), protocolFee);
-            }
+            token().safeTransfer(address(_factory), protocolFee);
         }
     }
 

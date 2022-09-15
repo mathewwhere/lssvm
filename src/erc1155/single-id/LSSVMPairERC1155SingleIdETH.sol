@@ -105,14 +105,7 @@ contract LSSVMPairERC1155SingleIdETH is LSSVMPairERC1155SingleId {
 
         // Take protocol fee
         if (protocolFee > 0) {
-            // Round down to the actual ETH balance if there are numerical stability issues with the bonding curve calculations
-            if (protocolFee > address(this).balance) {
-                protocolFee = address(this).balance;
-            }
-
-            if (protocolFee > 0) {
-                payable(address(_factory)).safeTransferETH(protocolFee);
-            }
+            payable(address(_factory)).safeTransferETH(protocolFee);
         }
     }
 
@@ -131,14 +124,7 @@ contract LSSVMPairERC1155SingleIdETH is LSSVMPairERC1155SingleId {
     ) internal override {
         // Take protocol fee
         if (protocolFee > 0) {
-            // Round down to the actual ETH balance if there are numerical stability issues with the bonding curve calculations
-            if (protocolFee > address(this).balance) {
-                protocolFee = address(this).balance;
-            }
-
-            if (protocolFee > 0) {
-                payable(address(_factory)).safeTransferETH(protocolFee);
-            }
+            payable(address(_factory)).safeTransferETH(protocolFee);
         }
     }
 
