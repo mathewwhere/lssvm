@@ -27,11 +27,6 @@ contract MultiRouter {
         erc1155Factory = _erc1155Factory;
     }
 
-    struct PairSwapAny {
-        LSSVMPair pair;
-        uint256 numItems;
-    }
-
     struct PairSwapSpecific {
         LSSVMPair pair;
         uint256[] nftIds;
@@ -42,11 +37,6 @@ contract MultiRouter {
         uint256 maxCost;
     }
 
-    struct RobustPairSwapAny {
-        PairSwapAny swapInfo;
-        uint256 maxCost;
-    }
-
     struct RobustPairSwapSpecificForToken {
         PairSwapSpecific swapInfo;
         uint256 minOutput;
@@ -54,7 +44,6 @@ contract MultiRouter {
 
     struct RobustPairNFTsForTokenAndTokenforNFTsTrade {
         RobustPairSwapSpecific[] tokenToNFTTradesSpecific;
-        RobustPairSwapAny[] tokenToNFTTradesAny;
         RobustPairSwapSpecificForToken[] nftToTokenTrades;
         uint256 inputAmount;
         address payable tokenRecipient;
@@ -106,48 +95,6 @@ contract MultiRouter {
                         .pair
                         .swapTokenForSpecificNFTs(
                             params.tokenToNFTTradesSpecific[i].swapInfo.nftIds,
-                            pairCost,
-                            params.nftRecipient,
-                            true,
-                            msg.sender
-                        );
-                }
-
-                unchecked {
-                    ++i;
-                }
-            }
-        }
-        {
-            uint256 pairCost;
-            CurveErrorCodes.Error error;
-
-            // Try doing each swap
-            uint256 numSwaps = params.tokenToNFTTradesAny.length;
-            for (uint256 i; i < numSwaps; ) {
-                // Calculate actual cost per swap
-                (error, , , pairCost, ) = params
-                    .tokenToNFTTradesAny[i]
-                    .swapInfo
-                    .pair
-                    .getBuyNFTQuote(
-                        params
-                            .tokenToNFTTradesAny[i]
-                            .swapInfo
-                            .numItems
-                    );
-
-                // If within our maxCost and no error, proceed
-                if (
-                    pairCost <= params.tokenToNFTTradesAny[i].maxCost &&
-                    error == CurveErrorCodes.Error.OK
-                ) {
-                    remainingValue -= params
-                        .tokenToNFTTradesAny[i]
-                        .swapInfo
-                        .pair
-                        .swapTokenForAnyNFTs(
-                            params.tokenToNFTTradesAny[i].swapInfo.numItems,
                             pairCost,
                             params.nftRecipient,
                             true,
@@ -266,49 +213,6 @@ contract MultiRouter {
                     ++i;
                 }
             }
-        }
-        // Attempt to fill each buy order for specific NFTs (used for ERC1155-single-id)
-        {
-            uint256 pairCost;
-            CurveErrorCodes.Error error;
-
-            // Try doing each swap
-            uint256 numSwaps = params.tokenToNFTTradesAny.length;
-            for (uint256 i; i < numSwaps; ) {
-                // Calculate actual cost per swap
-                (error, , , pairCost, ) = params
-                    .tokenToNFTTradesAny[i]
-                    .swapInfo
-                    .pair
-                    .getBuyNFTQuote(
-                        params.tokenToNFTTradesAny[i].swapInfo.numItems
-                    );
-
-                // If within our maxCost and no error, proceed
-                if (
-                    pairCost <= params.tokenToNFTTradesAny[i].maxCost &&
-                    error == CurveErrorCodes.Error.OK
-                ) {
-                    // We know how much ETH to send because we already did the math above
-                    // So we just send that much
-                    remainingValue -= params
-                        .tokenToNFTTradesAny[i]
-                        .swapInfo
-                        .pair
-                        .swapTokenForAnyNFTs{value: pairCost}(
-                        params.tokenToNFTTradesAny[i].swapInfo.numItems,
-                        pairCost,
-                        params.nftRecipient,
-                        true,
-                        msg.sender
-                    );
-                }
-
-                unchecked {
-                    ++i;
-                }
-            }
-
             // Return remaining value to sender
             if (remainingValue > 0) {
                 params.tokenRecipient.safeTransferETH(remainingValue);

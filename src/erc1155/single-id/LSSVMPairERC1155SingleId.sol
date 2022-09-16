@@ -140,6 +140,69 @@ abstract contract LSSVMPairERC1155SingleId is
         ETH pairs.
         @return inputAmount The amount of token used for purchase
      */
+    function swapTokenForSpecificNFTs(
+        uint256[] calldata numNFTs,
+        uint256 maxExpectedTokenInput,
+        address nftRecipient,
+        bool isRouter,
+        address routerCaller
+    ) external payable virtual nonReentrant returns (uint256 inputAmount) {
+        // Store locally to remove extra calls
+        ILSSVMPairERC1155FactoryLike _factory = factory();
+        ICurve _bondingCurve = bondingCurve();
+        IERC1155 _nft = nft();
+
+        // Input validation
+        {
+            PoolType _poolType = poolType();
+            require(
+                _poolType == PoolType.NFT || _poolType == PoolType.TRADE,
+                "Wrong Pool type"
+            );
+            require(
+                numNFTs.length == 1 && numNFTs[0] > 0,
+                "Must swap > 0 NFTs"
+            );
+        }
+
+        // Call bonding curve for pricing information
+        uint256 protocolFee;
+        (protocolFee, inputAmount) = _calculateBuyInfoAndUpdatePoolParams(
+            numNFTs[0],
+            maxExpectedTokenInput,
+            _bondingCurve,
+            _factory
+        );
+
+        _pullTokenInputAndPayProtocolFee(
+            inputAmount,
+            isRouter,
+            routerCaller,
+            _factory,
+            protocolFee
+        );
+
+        _sendAnyNFTsToRecipient(_nft, nftRecipient, numNFTs[0]);
+
+        _refundTokenToSender(inputAmount);
+
+        emit SwapNFTOutPair(inputAmount);
+    }
+
+    /**
+        @notice Sends token to the pair in exchange for any `numNFTs` NFTs
+        @dev To compute the amount of token to send, call bondingCurve.getBuyInfo.
+        This swap function is meant for users who are ID agnostic
+        @param numNFTs The number of NFTs to purchase
+        @param maxExpectedTokenInput The maximum acceptable cost from the sender. If the actual
+        amount is greater than this value, the transaction will be reverted.
+        @param nftRecipient The recipient of the NFTs
+        @param isRouter True if calling from LSSVMRouter, false otherwise. Not used for
+        ETH pairs.
+        @param routerCaller If isRouter is true, ERC20 tokens will be transferred from this address. Not used for
+        ETH pairs.
+        @return inputAmount The amount of token used for purchase
+     */
     function swapTokenForAnyNFTs(
         uint256 numNFTs,
         uint256 maxExpectedTokenInput,
@@ -221,7 +284,10 @@ abstract contract LSSVMPairERC1155SingleId is
                 _poolType == PoolType.TOKEN || _poolType == PoolType.TRADE,
                 "Wrong Pool type"
             );
-            require(numNFTs.length == 1 && numNFTs[0] > 0, "Must swap > 0 NFTs");
+            require(
+                numNFTs.length == 1 && numNFTs[0] > 0,
+                "Must swap > 0 NFTs"
+            );
         }
 
         // Call bonding curve for pricing information
