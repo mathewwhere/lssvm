@@ -32,9 +32,10 @@ contract MultiRouter {
         uint256[] nftIds;
     }
 
-    struct RobustPairSwapSpecific {
+    struct RobustPairSwapSpecificWithToken {
         PairSwapSpecific swapInfo;
         uint256 maxCost;
+        bool isETHSwap;
     }
 
     struct RobustPairSwapSpecificForToken {
@@ -43,128 +44,20 @@ contract MultiRouter {
     }
 
     struct RobustPairNFTsForTokenAndTokenforNFTsTrade {
-        RobustPairSwapSpecific[] tokenToNFTTradesSpecific;
+        RobustPairSwapSpecificWithToken[] tokenToNFTTradesSpecific;
         RobustPairSwapSpecificForToken[] nftToTokenTrades;
-        uint256 inputAmount;
-        address payable tokenRecipient;
-        address nftRecipient;
     }
 
     /**
-        @notice Buys NFTs with ERC20, and sells them for tokens in one transaction
+        @notice Buys NFTs with ETH and ERC20s and sells them for tokens in one transaction
         @param params All the parameters for the swap (packed in struct to avoid stack too deep), containing:
-        - tokenToNFTTradesSpecific The list of NFTs to buy (specific IDs)
-        - tokenToNFTTradesAny The list of NFTs to buy (ID-agnostic)
+        - tokenToNFTTradesSpecific The list of NFTs to buy 
         - nftToTokenSwapList The list of NFTs to sell (we cheat a little, and pack the amount into the ID field for ID-agnostic sells)
         - inputAmount The max amount of tokens to send (if ERC20)
         - tokenRecipient The address that receives tokens from the NFTs sold
         - nftRecipient The address that receives NFTs
      */
-    function robustSwapERC20ForSpecificNFTsAndNFTsToToken(
-        RobustPairNFTsForTokenAndTokenforNFTsTrade calldata params
-    ) external payable returns (uint256 remainingValue, uint256 outputAmount) {
-        {
-            remainingValue = params.inputAmount;
-            uint256 pairCost;
-            CurveErrorCodes.Error error;
-
-            // Try doing each swap
-            uint256 numSwaps = params.tokenToNFTTradesSpecific.length;
-            for (uint256 i; i < numSwaps; ) {
-                // Calculate actual cost per swap
-                (error, , , pairCost, ) = params
-                    .tokenToNFTTradesSpecific[i]
-                    .swapInfo
-                    .pair
-                    .getBuyNFTQuote(
-                        params
-                            .tokenToNFTTradesSpecific[i]
-                            .swapInfo
-                            .nftIds
-                            .length
-                    );
-
-                // If within our maxCost and no error, proceed
-                if (
-                    pairCost <= params.tokenToNFTTradesSpecific[i].maxCost &&
-                    error == CurveErrorCodes.Error.OK
-                ) {
-                    remainingValue -= params
-                        .tokenToNFTTradesSpecific[i]
-                        .swapInfo
-                        .pair
-                        .swapTokenForSpecificNFTs(
-                            params.tokenToNFTTradesSpecific[i].swapInfo.nftIds,
-                            pairCost,
-                            params.nftRecipient,
-                            true,
-                            msg.sender
-                        );
-                }
-
-                unchecked {
-                    ++i;
-                }
-            }
-        }
-        {
-            // Try doing each swap
-            uint256 numSwaps = params.nftToTokenTrades.length;
-            for (uint256 i; i < numSwaps; ) {
-                uint256 pairOutput;
-
-                // Locally scoped to avoid stack too deep error
-                {
-                    CurveErrorCodes.Error error;
-                    (error, , , pairOutput, ) = params
-                        .nftToTokenTrades[i]
-                        .swapInfo
-                        .pair
-                        .getSellNFTQuote(
-                            params.nftToTokenTrades[i].swapInfo.nftIds.length
-                        );
-                    if (error != CurveErrorCodes.Error.OK) {
-                        unchecked {
-                            ++i;
-                        }
-                        continue;
-                    }
-                }
-
-                // If at least equal to our minOutput, proceed
-                if (pairOutput >= params.nftToTokenTrades[i].minOutput) {
-                    // Do the swap and update outputAmount with how many tokens we got
-                    outputAmount += params
-                        .nftToTokenTrades[i]
-                        .swapInfo
-                        .pair
-                        .swapNFTsForToken(
-                            params.nftToTokenTrades[i].swapInfo.nftIds,
-                            0,
-                            params.tokenRecipient,
-                            true,
-                            msg.sender
-                        );
-                }
-
-                unchecked {
-                    ++i;
-                }
-            }
-        }
-    }
-
-    /**
-        @notice Buys NFTs with ETH and sells them for tokens in one transaction
-        @param params All the parameters for the swap (packed in struct to avoid stack too deep), containing:
-        - tokenToNFTTradesSpecific The list of NFTs to buy (specific IDs)
-        - tokenToNFTTradesAny The list of NFTs to buy (ID-agnostic)
-        - nftToTokenSwapList The list of NFTs to sell (we cheat a little, and pack the amount into the ID field for ID-agnostic sells)
-        - inputAmount The max amount of tokens to send (if ERC20)
-        - tokenRecipient The address that receives tokens from the NFTs sold
-        - nftRecipient The address that receives NFTs
-     */
-    function robustSwapETHForSpecificNFTsAndNFTsToToken(
+    function robustSwapTokensForSpecificNFTsAndNFTsToToken(
         RobustPairNFTsForTokenAndTokenforNFTsTrade calldata params
     ) external payable returns (uint256 remainingValue, uint256 outputAmount) {
         // Attempt to fill each buy order for specific NFTs (used for ERC721 and ERC1155-many-id)
@@ -196,17 +89,36 @@ contract MultiRouter {
                 ) {
                     // We know how much ETH to send because we already did the math above
                     // So we just send that much
-                    remainingValue -= params
-                        .tokenToNFTTradesSpecific[i]
-                        .swapInfo
-                        .pair
-                        .swapTokenForSpecificNFTs{value: pairCost}(
-                        params.tokenToNFTTradesSpecific[i].swapInfo.nftIds,
-                        pairCost,
-                        params.nftRecipient,
-                        true,
-                        msg.sender
-                    );
+                    if (params.tokenToNFTTradesSpecific[i].isETHSwap) {
+                        remainingValue -= params
+                            .tokenToNFTTradesSpecific[i]
+                            .swapInfo
+                            .pair
+                            .swapTokenForSpecificNFTs{value: pairCost}(
+                            params.tokenToNFTTradesSpecific[i].swapInfo.nftIds,
+                            pairCost,
+                            msg.sender,
+                            true,
+                            msg.sender
+                        );
+                    } 
+                    // Otherwise we send ERC20 tokens
+                    else {
+                        params
+                            .tokenToNFTTradesSpecific[i]
+                            .swapInfo
+                            .pair
+                            .swapTokenForSpecificNFTs(
+                                params
+                                    .tokenToNFTTradesSpecific[i]
+                                    .swapInfo
+                                    .nftIds,
+                                pairCost,
+                                msg.sender,
+                                true,
+                                msg.sender
+                            );
+                    }
                 }
 
                 unchecked {
@@ -215,7 +127,7 @@ contract MultiRouter {
             }
             // Return remaining value to sender
             if (remainingValue > 0) {
-                params.tokenRecipient.safeTransferETH(remainingValue);
+                payable(msg.sender).safeTransferETH(remainingValue);
             }
         }
         // Attempt to fill each sell order (for ERC721 and ERC1155-many-id)
@@ -254,7 +166,7 @@ contract MultiRouter {
                         .swapNFTsForToken(
                             params.nftToTokenTrades[i].swapInfo.nftIds,
                             0,
-                            params.tokenRecipient,
+                            payable(msg.sender),
                             true,
                             msg.sender
                         );
