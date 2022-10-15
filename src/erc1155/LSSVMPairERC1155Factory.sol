@@ -457,11 +457,13 @@ contract LSSVMPairERC1155Factory is Ownable, ILSSVMPairERC1155FactoryLike {
         _pair.initialize(msg.sender, _assetRecipient, _delta, _fee, _spotPrice);
 
         // transfer initial tokens to pair
-        _token.safeTransferFrom(
-            msg.sender,
-            address(_pair),
-            _initialTokenBalance
-        );
+        if (_initialTokenBalance != 0) {
+            _token.safeTransferFrom(
+                msg.sender,
+                address(_pair),
+                _initialTokenBalance
+            );
+        }
 
         // transfer initial NFTs from sender to pair
         uint256 numNFTs = _initialNFTIDs.length;
@@ -524,11 +526,13 @@ contract LSSVMPairERC1155Factory is Ownable, ILSSVMPairERC1155FactoryLike {
         _pair.initialize(msg.sender, _assetRecipient, _delta, _fee, _spotPrice);
 
         // transfer initial tokens to pair
-        _token.safeTransferFrom(
-            msg.sender,
-            address(_pair),
-            _initialTokenBalance
-        );
+        if (_initialTokenBalance != 0) {
+            _token.safeTransferFrom(
+                msg.sender,
+                address(_pair),
+                _initialTokenBalance
+            );
+        }
 
         // transfer initial NFTs from sender to pair
         _nft.safeTransferFrom(
