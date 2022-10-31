@@ -67,6 +67,7 @@ contract MultiRouter {
             CurveErrorCodes.Error error;
 
             // Try doing each swap
+            // TODO: this currently doesn't track the quote for the number of items correctly because it uses LENGTH instead of VALUE for erc1155
             uint256 numSwaps = params.tokenToNFTTradesSpecific.length;
             for (uint256 i; i < numSwaps; ) {
                 // Calculate actual cost per swap
@@ -133,6 +134,7 @@ contract MultiRouter {
         // Attempt to fill each sell order (for ERC721 and ERC1155-many-id)
         // For ERC1155-single-id, we abuse the RobustPairSwapSpecific struct and encode
         // the number of items to swap for as the value in a single item array of length 1
+        // TODO: this currently doesn't track the quote for the number of items correctly because it uses LENGTH instead of VALUE for erc1155
         {
             uint256 numSwaps = params.nftToTokenTrades.length;
             for (uint256 i; i < numSwaps; ) {
